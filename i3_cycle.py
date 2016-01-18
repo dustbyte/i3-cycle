@@ -101,10 +101,13 @@ class i3Tree(object):
         """
         return i3Node.find(self.root, focused=True)
 
-def find_focusable(node, direction):
+
+def find_focusable(node, wanted):
     """
     Search the first focusable window that is not the focused current one
     """
+
+    direction = wanted["direction"]
 
     def finder(node):
         """
@@ -120,8 +123,29 @@ def find_focusable(node, direction):
     # Get the next child given the direction
     child_ids = [child.id for child in node.children]
     focus_idx = child_ids.index(node.focused_child.id)
-    next_node = node.children[(focus_idx + direction) % len(child_ids)]
+    next_idx = (focus_idx + direction) % len(child_ids)
+    next_node = node.children[next_idx]
+
     return finder(next_node)
+
+
+def find_split(current, wanted):
+    """
+    Find the appropriate split
+    """
+
+    if (current and current.orientation == wanted["orientation"]
+        and len(current.children) > 1):
+        focusable = find_focusable(current, wanted)
+        if focusable:
+            i3.focus(con_id=focusable.id)
+        return focusable
+
+    if not current or current.type == "workspace":
+        return
+
+    return find_split(current.parent, wanted)
+
 
 def main():
     """
@@ -140,22 +164,7 @@ def main():
     }
 
     tree = i3Tree()
-    current = tree.focused_container.parent
-
-    while True:
-
-        # Not in a split
-        if (current.orientation == wanted["orientation"]
-            and len(current.children) > 1):
-            focusable = find_focusable(current, wanted["direction"])
-            if focusable:
-                i3.focus(con_id=focusable.id)
-            break
-
-        if not current or current.type == "workspace":
-            break
-
-        current = current.parent
+    find_split(tree.focused_container.parent, wanted)
 
 
 if __name__ == '__main__':
