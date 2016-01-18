@@ -52,6 +52,7 @@ class i3Node(object):
         self.raw_node = node
         self.parent = parent
         self.children = []
+        self.children_dict = {}
         self.has_focus = self.focused
         self.focused_child = None
         self.orientation = self.raw_node["orientation"]
@@ -62,6 +63,7 @@ class i3Node(object):
                 self.has_focus = True
                 self.focused_child = child_i3_node
             self.children.append(child_i3_node)
+            self.children_dict[child_i3_node.id] = child_i3_node
 
     def __getattr__(self, attr):
         try:
@@ -104,17 +106,21 @@ def find_focusable(node, direction):
     Search the first focusable window that is not the focused current one
     """
 
-    for child in direction(node.children):
+    def finder(node):
+        """
+        Search the focusable leaf
+        """
 
-        if child.has_focus:
-            continue
+        if not node.children:
+            return node
 
-        if not child.children:
-            return child
+        if node.focus:
+            return node.children_dict[node.focus[0]]
 
-        return find_focusable(child, direction)
-
-    return None
+    # Get the next child given the direction
+    next_node = direction([child for child in node.children
+                           if not child.has_focus])[0]
+    return finder(next_node)
 
 def main():
     """
@@ -145,7 +151,7 @@ def main():
                 i3.focus(con_id=focusable.id)
             break
 
-        if not current or current.type == "output":
+        if not current or current.type == "workspace":
             break
 
         current = current.parent

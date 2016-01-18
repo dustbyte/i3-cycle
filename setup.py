@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="i3-cycle",
-    version="0.1",
+    version="0.2",
     author="Pierre Wacrenier",
     author_email="mota@souitom.org",
     description="Scipt to manage i3 resources in a cycle fashion",
