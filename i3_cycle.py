@@ -115,11 +115,12 @@ def find_focusable(node, direction):
             return node
 
         if node.focus:
-            return node.children_dict[node.focus[0]]
+            return finder(node.children_dict[node.focus[0]])
 
     # Get the next child given the direction
-    next_node = direction([child for child in node.children
-                           if not child.has_focus])[0]
+    child_ids = [child.id for child in node.children]
+    focus_idx = child_ids.index(node.focused_child.id)
+    next_node = node.children[(focus_idx + direction) % len(child_ids)]
     return finder(next_node)
 
 def main():
@@ -134,8 +135,8 @@ def main():
     wanted = {
         "orientation": ("vertical" if args.direction in ("up", "down")
                         else "horizontal"),
-        "direction": ((lambda x: x[:]) if args.direction in ("down", "right")
-                      else (lambda x: x[::-1])),
+        "direction": (1 if args.direction in ("down", "right")
+                      else -1),
     }
 
     tree = i3Tree()
