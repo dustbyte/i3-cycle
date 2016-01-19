@@ -95,56 +95,46 @@ class i3Tree(object):
         self.root = i3Node(self.raw_tree)
 
     @property
-    def focused_container(self):
+    def focused(self):
         """
         Return the focused container within the i3 tree
         """
         return i3Node.find(self.root, focused=True)
 
 
-def find_focusable(node, wanted):
+def find_focusable(node):
     """
     Search the first focusable window that is not the focused current one
     """
 
-    direction = wanted["direction"]
+    if not node.children:
+        return node
 
-    def finder(node):
-        """
-        Search the focusable leaf
-        """
-
-        if not node.children:
-            return node
-
-        if node.focus:
-            return finder(node.children_dict[node.focus[0]])
-
-    # Get the next child given the direction
-    child_ids = [child.id for child in node.children]
-    focus_idx = child_ids.index(node.focused_child.id)
-    next_idx = (focus_idx + direction) % len(child_ids)
-    next_node = node.children[next_idx]
-
-    return finder(next_node)
+    if node.focus:
+        return find_focusable(node.children_dict[node.focus[0]])
 
 
-def find_split(current, wanted):
+def find_split(node, wanted):
     """
     Find the appropriate split
     """
 
-    if (current and current.orientation == wanted["orientation"]
-        and len(current.children) > 1):
-        focusable = find_focusable(current, wanted)
+    if (node and node.orientation == wanted["orientation"]
+        and len(node.children) > 1):
+        # Get the next child given the direction
+        child_ids = [child.id for child in node.children]
+        focus_idx = child_ids.index(node.focused_child.id)
+        next_idx = (focus_idx + wanted['direction']) % len(child_ids)
+        next_node = node.children[next_idx]
+        focusable = find_focusable(next_node)
         if focusable:
             i3.focus(con_id=focusable.id)
         return focusable
 
-    if not current or current.type == "workspace":
+    if not node or node.type == "workspace":
         return
 
-    return find_split(current.parent, wanted)
+    return find_split(node.parent, wanted)
 
 
 def main():
@@ -152,19 +142,35 @@ def main():
     Entry point
     """
     parser = ArgumentParser()
-    parser.add_argument("direction", choices=("up", "down", "left", "right"),
+    parser.add_argument("direction",
+                        choices=(
+                            "up", "down", "left", "right",
+                            "next", "prev"
+                        ),
                         help="Direction to put the focus on")
     args = parser.parse_args()
 
-    wanted = {
-        "orientation": ("vertical" if args.direction in ("up", "down")
-                        else "horizontal"),
-        "direction": (1 if args.direction in ("down", "right")
-                      else -1),
-    }
-
     tree = i3Tree()
-    find_split(tree.focused_container.parent, wanted)
+
+    if args.direction in ("next", "prev"):
+        direction = 1 if args.direction == "next" else -1
+        outputs = [output for output in tree.root.children
+                   if output.name != "__i3"]
+        focus_idx = outputs.index(tree.root.focused_child)
+        next_idx = (focus_idx + direction) % len(outputs)
+        next_output = outputs[next_idx]
+        con = find_focusable(next_output)
+        if con:
+            i3.focus(con_id=con.id)
+    else:
+        wanted = {
+            "orientation": ("vertical" if args.direction in ("up", "down")
+                            else "horizontal"),
+            "direction": (1 if args.direction in ("down", "right")
+                          else -1),
+        }
+
+        find_split(tree.focused.parent, wanted)
 
 
 if __name__ == '__main__':
