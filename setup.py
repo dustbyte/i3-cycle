@@ -9,6 +9,8 @@ setup(
     url="http://github.com/mota/i3-cycle",
     license="ISC",
     install_requires=["i3-tree"],
+    setup_requires=["pytest-runner"],
+    tests_require=["pytest"],
     py_modules=["i3_cycle"],
     entry_points={
         "console_scripts": [
