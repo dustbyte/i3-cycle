@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="i3-cycle",
-    version="0.6",
+    version="1.0",
     author="Pierre Wacrenier",
     author_email="mota@souitom.org",
     description="Cycle focus through i3 containers",
