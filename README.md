@@ -80,7 +80,7 @@ bindsym $mod+} exec i3-cycle right
 bindsym $mod+{ exec i3-cycle left
 bindsym $mod+Shift+{ exec i3-cycle up
 bindsym $mod+Shift+} exec i3-cycle down
-bindsym $mod+` exec i3-cycle next
-bindsym $mod+Shift+` exec i3-cycle prev
+bind $mod+49 exec i3-cycle next
+bind $mod+Shift+49 exec i3-cycle prev
 ...
 ```
